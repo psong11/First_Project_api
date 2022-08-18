@@ -1,0 +1,61 @@
+name: Deploy to ElasticBeanstalk
+
+# This workflow requires a programmatic access key and secret with
+# EB permissions. Be sure to add the correct app, environment, and region.
+# AWS_ACCESS_KEY_ID
+# AWS_SECRET_ACCESS_KEY
+
+# Configure with your branches
+on:
+  push:
+    branches:
+    - staging
+    - production
+    
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v1
+
+    # This caches the node_modules folder so subsequent workflow runs
+    # do not have to reinstall and can run much faster
+    - name: Installing and caching dependencies
+      uses: bahmutov/npm-install@v1
+
+    # Zip code so it can be sent to S3
+    - name: Generate deployment package
+      uses: papeloto/action-zip@v1
+      with:
+        files: /
+        dest: deploy.zip
+      
+    - name: Deploy to EB Staging
+      uses: einaregilsson/beanstalk-deploy@v10
+      if: github.ref == 'refs/heads/staging'
+      with:
+        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        application_name: aws-teach-in
+        environment_name: Awsteachin-env
+        # Use commit hash for version label
+        version_label: ${{ github.sha }}
+        use_existing_version_if_available: true
+        region: us-east-1
+        deployment_package: deploy.zip
+        
+    - name: Deploy to EB Production
+      uses: einaregilsson/beanstalk-deploy@v10
+      if: github.ref == 'refs/heads/production'
+      with:
+        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        application_name: APPNAME
+        environment_name: APPNAME-PRODUCTION
+        # Use commit hash for version label
+        version_label: ${{ github.sha }}
+        use_existing_version_if_available: true
+        region: REGION
+        deployment_package: deploy.zip

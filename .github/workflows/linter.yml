@@ -1,0 +1,17 @@
+name: Linter
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Fetching code
+      uses: actions/checkout@v2
+
+    - name: Installing and caching dependencies
+      uses: bahmutov/npm-install@v1
+
+    - name: Running linter
+      run: npm run lint
